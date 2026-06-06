@@ -1,5 +1,5 @@
 """
-server.py — Thermal Overload Ticket Generator: host process
+server.py — Data Centre Thermal Monitor: host process
 
 Reads JSON lines from the STM32 over USB serial, serves a real-time web
 dashboard via FastAPI + WebSocket, and calls Gemini on thermal alerts or
@@ -9,8 +9,8 @@ Usage:
     $env:GEMINI_API_KEY = "AIza..."
     python server.py --port COM3 --baud 115200
 
-    # No board? Feed test data via stdin:
-    python server.py --fake
+    # Demo mode (realistic data-centre temperature simulation):
+    python server.py --demo
 """
 
 import argparse
@@ -257,30 +257,72 @@ async def analyze(request: dict):
 
 @app.post("/api/simulate-alert")
 async def simulate_alert():
-    """For testing without hardware."""
+    """Inject a test alert (demo mode only)."""
     payload = {
-        "type": "alert",
         "status": "CRITICAL",
-        "temp": 31.7,
-        "threshold": 30.0,
+        "temp": 36.4,
+        "threshold": 35.0,
         "location": "Server Rack A",
-        "_ts": datetime.now(timezone.utc).isoformat(),
     }
     serial_raw_q.put(json.dumps(payload).encode())
     return {"ok": True}
 
 
+# ── Demo data generator (realistic data-centre temperatures) ──────────────────
+
+def demo_reader(stop_event: threading.Event):
+    """
+    Simulates a data-centre temperature sensor based on real test observations.
+    Baseline: 22-24 °C (ASHRAE A2 normal range).
+    Slow drift + occasional thermal event that breaches 35 °C threshold.
+    """
+    import math, random
+    t = 0.0
+    spike_countdown = random.randint(80, 140)   # seconds until first spike
+
+    while not stop_event.is_set():
+        # Baseline: slow sine drift around 23 °C, ±1.5 °C
+        base = 23.0 + math.sin(t * 0.012) * 1.5
+
+        # Gradual load-driven rise during spike
+        spike_val = 0.0
+        if spike_countdown <= 0:
+            # Spike lasts ~30 s, peaks at 36-38 °C
+            progress = min(1.0, (30 - spike_countdown * -1) / 30.0) if spike_countdown < 0 else 0
+            spike_val = math.sin(progress * math.pi) * random.uniform(13, 15)
+            if spike_countdown < -30:
+                spike_countdown = random.randint(120, 200)  # next spike
+        spike_countdown -= 1
+
+        temp = round(base + spike_val + random.uniform(-0.1, 0.1), 2)
+
+        frame = {
+            "type": "data",
+            "ms": int(t * 1000),
+            "te": temp,
+        }
+        serial_raw_q.put(json.dumps(frame).encode())
+        t += 1.0
+        time.sleep(1.0)
+
+
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 def main():
-    parser = argparse.ArgumentParser(description="Thermal sensor web server")
+    parser = argparse.ArgumentParser(description="Data Centre Thermal Monitor")
     parser.add_argument("--port", default="COM3", help="Serial port (e.g. COM3 or /dev/ttyACM0)")
     parser.add_argument("--baud", type=int, default=115200)
     parser.add_argument("--web-port", type=int, default=8000, help="HTTP/WebSocket port")
+    parser.add_argument("--demo", action="store_true",
+                        help="Run with simulated data-centre temperature data (no board needed)")
     args = parser.parse_args()
 
-    t = threading.Thread(target=serial_reader,
-                         args=(args.port, args.baud, stop_event), daemon=True)
+    if args.demo:
+        print("[server] DEMO mode — simulating data-centre temperature sensor.")
+        t = threading.Thread(target=demo_reader, args=(stop_event,), daemon=True)
+    else:
+        t = threading.Thread(target=serial_reader,
+                             args=(args.port, args.baud, stop_event), daemon=True)
     t.start()
 
     print(f"[server] Dashboard -> http://localhost:{args.web_port}")

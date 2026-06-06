@@ -75,23 +75,22 @@ def analyze_stream(samples: list, prompt: str) -> Generator[str, None, None]:
                 "max": round(max(vals), 4),
                 "mean": round(sum(vals) / len(vals), 4)}
 
-    keys = ("ax", "ay", "az", "gx", "gy", "gz", "ti", "te")
+    keys = ("te",)
     stats = {k: _stats(k) for k in keys if _stats(k)}
 
     display = samples[-80:]
 
     system = (
-        "You are an expert IoT sensor data analyst specializing in STM32 embedded systems.\n"
-        "Sensors:\n"
-        "  • MPU6050 — ax/ay/az (g), gx/gy/gz (deg/s), ti (die °C)\n"
-        "  • MCP9808 — te (ambient °C, ±0.0625 °C accuracy)\n"
-        "  • ms — milliseconds since MCU boot\n\n"
+        "You are an expert data-centre thermal management system.\n"
+        "Sensor: MCP9808 temperature sensor (±0.0625 °C accuracy) monitoring inlet air temperature.\n"
+        "Field: te = inlet temperature in °C\n"
+        "ASHRAE thresholds: Normal < 27 °C | Warning 27-35 °C | Critical > 35 °C\n\n"
         "Respond with concise bullet-point insights. Be quantitative. Flag anomalies. "
-        "Match depth to the user's specific question."
+        "Recommend specific remediation actions when temperature is elevated."
     )
 
     user_msg = (
-        f"Dataset: {len(samples)} samples. Statistical summary:\n"
+        f"Dataset: {len(samples)} temperature samples. Statistical summary:\n"
         f"{json.dumps(stats, indent=2)}\n\n"
         f"Last {len(display)} samples:\n"
         f"{json.dumps(display, indent=2)}\n\n"
