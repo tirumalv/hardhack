@@ -299,11 +299,11 @@
     <div class="alert-stats">
       <div class="alert-stat">
         <div class="alert-stat-val" id="alert-temp-val">â€”</div>
-        <div class="alert-stat-label">Current Â°C</div>
+        <div class="alert-stat-label">Current &deg;C</div>
       </div>
       <div class="alert-stat">
         <div class="alert-stat-val" id="alert-thresh-val">â€”</div>
-        <div class="alert-stat-label">Threshold Â°C</div>
+        <div class="alert-stat-label">Threshold &deg;C</div>
       </div>
     </div>
     <div class="alert-progress"><div class="alert-progress-bar" id="alert-progress-bar"></div></div>
@@ -333,7 +333,7 @@
     <div class="card-title">Current Temperature</div>
     <div class="big-temp">
       <div class="big-temp-val" id="v-te">â€”</div>
-      <div class="big-temp-unit">Â°C</div>
+      <div class="big-temp-unit">&deg;C</div>
       <div class="status-badge" id="temp-status-badge">No Data</div>
     </div>
   </div>
@@ -345,17 +345,17 @@
       <div class="stat-item">
         <div class="stat-label">Min</div>
         <div class="stat-val" id="v-min">â€”</div>
-        <div class="stat-unit">Â°C</div>
+        <div class="stat-unit">&deg;C</div>
       </div>
       <div class="stat-item">
         <div class="stat-label">Max</div>
         <div class="stat-val" id="v-max" style="color:var(--orange)">â€”</div>
-        <div class="stat-unit">Â°C</div>
+        <div class="stat-unit">&deg;C</div>
       </div>
       <div class="stat-item">
         <div class="stat-label">Average</div>
         <div class="stat-val" id="v-avg">â€”</div>
-        <div class="stat-unit">Â°C</div>
+        <div class="stat-unit">&deg;C</div>
       </div>
       <div class="stat-item">
         <div class="stat-label">Alerts</div>
@@ -371,19 +371,19 @@
     <div class="threshold-list">
       <div class="threshold-row">
         <div class="threshold-label"><div class="threshold-dot" style="background:var(--green)"></div>Normal</div>
-        <div class="threshold-val" style="color:var(--green)">&lt; 27 Â°C</div>
+        <div class="threshold-val" style="color:var(--green)">&lt; 27 &deg;C</div>
       </div>
       <div class="threshold-row">
         <div class="threshold-label"><div class="threshold-dot" style="background:var(--yellow)"></div>Warning</div>
-        <div class="threshold-val" style="color:var(--yellow)">27 â€“ 35 Â°C</div>
+        <div class="threshold-val" style="color:var(--yellow)">27 â€“ 35 &deg;C</div>
       </div>
       <div class="threshold-row">
         <div class="threshold-label"><div class="threshold-dot" style="background:var(--red)"></div>Critical</div>
-        <div class="threshold-val" style="color:var(--red)">&gt; 35 Â°C</div>
+        <div class="threshold-val" style="color:var(--red)">&gt; 35 &deg;C</div>
       </div>
       <div class="threshold-row">
         <div class="threshold-label"><div class="threshold-dot" style="background:#888"></div>Alert fires at</div>
-        <div class="threshold-val">35.0 Â°C</div>
+        <div class="threshold-val">35.0 &deg;C</div>
       </div>
     </div>
   </div>
@@ -432,7 +432,7 @@ const tempChart = new Chart(document.getElementById('chart-temp').getContext('2d
   data: {
     labels: Array(WINDOW).fill(''),
     datasets: [
-      { label: 'Inlet Temp Â°C', borderColor: '#58a6ff', backgroundColor: 'rgba(88,166,255,0.08)',
+      { label: 'Inlet Temp &deg;C', borderColor: '#58a6ff', backgroundColor: 'rgba(88,166,255,0.08)',
         data: [], fill: true },
     ]
   },
@@ -446,7 +446,7 @@ const tempChart = new Chart(document.getElementById('chart-temp').getContext('2d
       y: {
         min: 15, max: 45,
         grid: { color: '#21262d' },
-        ticks: { color: '#8b949e', font: { size: 10 }, callback: v => v + 'Â°C' }
+        ticks: { color: '#8b949e', font: { size: 10 }, callback: v => v + '&deg;C' }
       }
     },
     plugins: {
@@ -456,13 +456,13 @@ const tempChart = new Chart(document.getElementById('chart-temp').getContext('2d
           warnLine: {
             type: 'line', yMin: WARN_TEMP, yMax: WARN_TEMP,
             borderColor: '#d29922', borderWidth: 1, borderDash: [6, 4],
-            label: { content: 'Warning 27Â°C', display: true, position: 'end',
+            label: { content: 'Warning 27&deg;C', display: true, position: 'end',
                      color: '#d29922', font: { size: 9 }, backgroundColor: 'transparent' }
           },
           critLine: {
             type: 'line', yMin: THRESHOLD, yMax: THRESHOLD,
             borderColor: '#f85149', borderWidth: 1.5, borderDash: [6, 4],
-            label: { content: 'Critical 35Â°C', display: true, position: 'end',
+            label: { content: 'Critical 35&deg;C', display: true, position: 'end',
                      color: '#f85149', font: { size: 9 }, backgroundColor: 'transparent' }
           }
         }
@@ -549,7 +549,7 @@ function handleAlert(d) {
   document.getElementById('v-alerts').textContent = alertCount;
 
   document.getElementById('alert-msg').textContent =
-    `Temp ${d.temp}Â°C exceeded threshold ${d.threshold ?? THRESHOLD}Â°C â€” ${d.location}`;
+    `Temp ${d.temp}&deg;C exceeded threshold ${d.threshold ?? THRESHOLD}&deg;C â€” ${d.location}`;
   const banner = document.getElementById('alert-banner');
   banner.classList.add('show');
   setTimeout(() => banner.classList.remove('show'), 15000);

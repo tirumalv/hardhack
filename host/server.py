@@ -299,29 +299,41 @@ async def simulate_alert():
 
 def demo_reader(stop_event: threading.Event):
     """
-    Simulates a data-centre temperature sensor based on real test observations.
-    Baseline: 22-24 °C (ASHRAE A2 normal range).
-    Slow drift + occasional thermal event that breaches 35 °C threshold.
+    Simulates a data-centre inlet temperature sensor.
+    Starts at 28 °C (slightly warm), slowly drifts upward with realistic noise,
+    occasional workload spikes that push into warning/critical range.
     """
     import math, random
     t = 0.0
-    spike_countdown = random.randint(80, 140)   # seconds until first spike
+    # Slow upward trend: starts at 28, climbs ~0.3 °C/min, plateaus around 32-33
+    trend = 28.0
+    spike_active = 0       # seconds remaining in current spike
+    spike_peak   = 0.0
 
     while not stop_event.is_set():
-        # Baseline: slow sine drift around 23 °C, ±1.5 °C
-        base = 23.0 + math.sin(t * 0.012) * 1.5
+        # Slow upward trend — rises ~0.005 °C/s, soft-caps around 32 °C
+        trend += 0.005 * (1.0 - max(0, trend - 28.0) / 6.0)
 
-        # Gradual load-driven rise during spike
+        # Small sine wave to look "real-time" (HVAC cycling effect)
+        wave = math.sin(t * 0.08) * 0.4 + math.sin(t * 0.21) * 0.15
+
+        # Random micro-noise
+        noise = random.uniform(-0.12, 0.12)
+
+        # Occasional workload spike: every 90-150 s, temp rises 3-7 °C over ~45 s
+        if spike_active <= 0 and random.random() < 0.007:   # ~0.7% chance per second
+            spike_active = random.randint(35, 55)
+            spike_peak   = random.uniform(3.5, 7.5)
+
         spike_val = 0.0
-        if spike_countdown <= 0:
-            # Spike lasts ~30 s, peaks at 36-38 °C
-            progress = min(1.0, (30 - spike_countdown * -1) / 30.0) if spike_countdown < 0 else 0
-            spike_val = math.sin(progress * math.pi) * random.uniform(13, 15)
-            if spike_countdown < -30:
-                spike_countdown = random.randint(120, 200)  # next spike
-        spike_countdown -= 1
+        if spike_active > 0:
+            progress = 1.0 - (spike_active / 45.0)
+            spike_val = spike_peak * math.sin(max(0, progress) * math.pi)
+            spike_active -= 1
 
-        temp = round(base + spike_val + random.uniform(-0.1, 0.1), 2)
+        temp = round(trend + wave + noise + spike_val, 2)
+        # Clamp to realistic range
+        temp = max(26.0, min(42.0, temp))
 
         frame = {
             "type": "data",
