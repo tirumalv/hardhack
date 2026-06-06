@@ -1,0 +1,7 @@
+.pio/
+__pycache__/
+*.pyc
+.env
+*.bin
+*.elf
+*.map
