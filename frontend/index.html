@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thermal Overload Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0d1117;
+    --surface:  #161b22;
+    --border:   #30363d;
+    --text:     #c9d1d9;
+    --muted:    #8b949e;
+    --blue:     #58a6ff;
+    --green:    #3fb950;
+    --yellow:   #d29922;
+    --red:      #f85149;
+    --orange:   #e3903a;
+    --purple:   #bc8cff;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  header h1 { font-size: 1.1rem; font-weight: 600; }
+  header h1 span { color: var(--red); }
+
+  .status-row { display: flex; gap: 16px; align-items: center; }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: #21262d;
+    border: 1px solid var(--border);
+  }
+  .chip .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: background 0.3s;
+  }
+  .chip.ok .dot    { background: var(--green); }
+  .chip.warn .dot  { background: var(--yellow); }
+  .chip.error .dot { background: var(--red);   }
+
+  /* ── Layout ── */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 16px;
+    padding: 20px 24px;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .card.span2 { grid-column: span 2; }
+  .card.span3 { grid-column: span 3; }
+
+  .card-title {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  /* ── Value cards ── */
+  .val-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .val-item { text-align: center; }
+  .val-label { font-size: 0.68rem; color: var(--muted); margin-bottom: 4px; }
+  .val-number {
+    font-size: 1.4rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    font-family: 'Courier New', monospace;
+    color: var(--blue);
+  }
+  .val-number.green  { color: var(--green);  }
+  .val-number.yellow { color: var(--yellow); }
+  .val-number.red    { color: var(--red);    }
+  .val-unit { font-size: 0.65rem; color: var(--muted); }
+
+  /* ── Charts ── */
+  .chart-wrap { position: relative; height: 180px; }
+
+  /* ── Alert banner ── */
+  #alert-banner {
+    display: none;
+    padding: 12px 20px;
+    background: #3d1a1a;
+    border: 1px solid var(--red);
+    border-radius: 8px;
+    color: var(--red);
+    font-weight: 600;
+    font-size: 0.9rem;
+    animation: pulse 1.5s infinite alternate;
+  }
+  #alert-banner.show { display: block; }
+  @keyframes pulse {
+    from { opacity: 0.8; }
+    to   { opacity: 1.0; }
+  }
+
+  /* ── LLM panel ── */
+  #llm-section { grid-column: span 3; }
+
+  .llm-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .llm-controls textarea {
+    flex: 1;
+    min-width: 280px;
+    padding: 8px 12px;
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 0.85rem;
+    resize: vertical;
+    min-height: 52px;
+    font-family: inherit;
+  }
+  .llm-controls textarea:focus { outline: none; border-color: var(--blue); }
+
+  .llm-controls select {
+    padding: 8px 10px;
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 0.85rem;
+  }
+
+  .btn {
+    padding: 8px 18px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-primary { background: var(--blue); color: #0d1117; }
+  .btn-danger  { background: var(--red);  color: #fff; }
+  .btn-ghost   { background: #21262d; color: var(--text); border: 1px solid var(--border); }
+
+  #llm-output {
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px;
+    min-height: 100px;
+    max-height: 320px;
+    overflow-y: auto;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    font-family: 'Courier New', monospace;
+    color: var(--text);
+  }
+  .llm-thinking { color: var(--muted); font-style: italic; }
+
+  /* ── Tickets ── */
+  #tickets-section { grid-column: span 3; }
+
+  .ticket {
+    background: #0d1117;
+    border: 1px solid #3d2a1a;
+    border-left: 4px solid var(--orange);
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 10px;
+    font-size: 0.8rem;
+    white-space: pre-wrap;
+    font-family: 'Courier New', monospace;
+    line-height: 1.5;
+    color: var(--text);
+  }
+  .ticket-meta {
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  #tickets-list:empty::after {
+    content: 'No alerts triggered yet.';
+    color: var(--muted);
+    font-size: 0.82rem;
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header>
+  <h1>Thermal Overload <span>Monitor</span></h1>
+  <div class="status-row">
+    <span class="chip" id="ws-chip"><span class="dot"></span><span id="ws-label">Connecting…</span></span>
+    <span class="chip" id="hw-chip"><span class="dot"></span><span id="hw-label">No data</span></span>
+    <span id="frame-count" style="font-size:0.72rem;color:var(--muted)">0 frames</span>
+    <button class="btn btn-ghost" style="font-size:0.72rem;padding:4px 10px" onclick="simulateAlert()">🔥 Sim Alert</button>
+  </div>
+</header>
+
+<div class="main-grid">
+
+  <!-- Alert banner -->
+  <div class="card span3" id="alert-banner">
+    ⚠ THERMAL ALERT — <span id="alert-msg"></span>
+  </div>
+
+  <!-- Temp values -->
+  <div class="card">
+    <div class="card-title">Temperature</div>
+    <div class="val-grid">
+      <div class="val-item">
+        <div class="val-label">External (MCP9808)</div>
+        <div class="val-number" id="v-te">—</div>
+        <div class="val-unit">°C</div>
+      </div>
+      <div class="val-item">
+        <div class="val-label">IMU Die (MPU6050)</div>
+        <div class="val-number green" id="v-ti">—</div>
+        <div class="val-unit">°C</div>
+      </div>
+      <div class="val-item">
+        <div class="val-label">Δ Temp</div>
+        <div class="val-number" id="v-td">—</div>
+        <div class="val-unit">°C</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Accel values -->
+  <div class="card">
+    <div class="card-title">Accelerometer</div>
+    <div class="val-grid">
+      <div class="val-item">
+        <div class="val-label">ax</div>
+        <div class="val-number" id="v-ax">—</div>
+        <div class="val-unit">g</div>
+      </div>
+      <div class="val-item">
+        <div class="val-label">ay</div>
+        <div class="val-number" id="v-ay">—</div>
+        <div class="val-unit">g</div>
+      </div>
+      <div class="val-item">
+        <div class="val-label">az</div>
+        <div class="val-number blue" id="v-az">—</div>
+        <div class="val-unit">g</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gyro values -->
+  <div class="card">
+    <div class="card-title">Gyroscope</div>
+    <div class="val-grid">
+      <div class="val-item">
+        <div class="val-label">gx</div>
+        <div class="val-number yellow" id="v-gx">—</div>
+        <div class="val-unit">°/s</div>
+      </div>
+      <div class="val-item">
+        <div class="val-label">gy</div>
+        <div class="val-number yellow" id="v-gy">—</div>
+        <div class="val-unit">°/s</div>
+      </div>
+      <div class="val-item">
+        <div class="val-label">gz</div>
+        <div class="val-number yellow" id="v-gz">—</div>
+        <div class="val-unit">°/s</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Temperature chart -->
+  <div class="card">
+    <div class="card-title">Temperature over time</div>
+    <div class="chart-wrap"><canvas id="chart-temp"></canvas></div>
+  </div>
+
+  <!-- Acceleration chart -->
+  <div class="card">
+    <div class="card-title">Acceleration (g)</div>
+    <div class="chart-wrap"><canvas id="chart-accel"></canvas></div>
+  </div>
+
+  <!-- Gyro chart -->
+  <div class="card">
+    <div class="card-title">Gyroscope (°/s)</div>
+    <div class="chart-wrap"><canvas id="chart-gyro"></canvas></div>
+  </div>
+
+  <!-- LLM Analysis -->
+  <div class="card" id="llm-section">
+    <div class="card-title">Claude AI Analysis</div>
+    <div class="llm-controls">
+      <textarea id="llm-prompt" placeholder="Ask Claude anything about the sensor data… e.g. 'Is the device being moved? Detect any vibrations.'"
+      >Analyze the sensor data. Describe the motion state, temperature trend, and flag any anomalies.</textarea>
+      <select id="llm-samples">
+        <option value="50">50 samples</option>
+        <option value="100" selected>100 samples</option>
+        <option value="200">200 samples</option>
+        <option value="500">500 samples</option>
+      </select>
+      <button class="btn btn-primary" id="analyze-btn" onclick="runAnalysis()">Analyze</button>
+      <button class="btn btn-ghost" onclick="clearOutput()">Clear</button>
+    </div>
+    <div id="llm-output"><span class="llm-thinking">Output will appear here…</span></div>
+  </div>
+
+  <!-- Incident tickets -->
+  <div class="card" id="tickets-section">
+    <div class="card-title">Incident Tickets (Auto-Generated on Thermal Alert)</div>
+    <div id="tickets-list"></div>
+  </div>
+
+</div>
+
+<script>
+// ── Chart setup ───────────────────────────────────────────────────────────────
+
+const WINDOW = 120;  // sample window on charts
+
+const chartDefaults = {
+  responsive: true,
+  maintainAspectRatio: false,
+  animation: false,
+  elements: { point: { radius: 0 }, line: { borderWidth: 1.5 } },
+  scales: {
+    x: { display: false },
+    y: { grid: { color: '#21262d' }, ticks: { color: '#8b949e', font: { size: 10 } } }
+  },
+  plugins: { legend: { labels: { color: '#8b949e', font: { size: 10 }, boxWidth: 12 } } }
+};
+
+function makeChart(id, datasets) {
+  const labels = Array(WINDOW).fill('');
+  return new Chart(document.getElementById(id).getContext('2d'), {
+    type: 'line',
+    data: { labels, datasets },
+    options: structuredClone(chartDefaults),
+  });
+}
+
+const tempChart = makeChart('chart-temp', [
+  { label: 'External °C', borderColor: '#f85149', data: [] },
+  { label: 'IMU °C',      borderColor: '#3fb950', data: [] },
+]);
+
+const accelChart = makeChart('chart-accel', [
+  { label: 'ax', borderColor: '#58a6ff', data: [] },
+  { label: 'ay', borderColor: '#3fb950', data: [] },
+  { label: 'az', borderColor: '#bc8cff', data: [] },
+]);
+
+const gyroChart = makeChart('chart-gyro', [
+  { label: 'gx', borderColor: '#d29922', data: [] },
+  { label: 'gy', borderColor: '#e3903a', data: [] },
+  { label: 'gz', borderColor: '#f85149', data: [] },
+]);
+
+function pushChart(chart, ...vals) {
+  chart.data.datasets.forEach((ds, i) => {
+    ds.data.push(vals[i]);
+    if (ds.data.length > WINDOW) ds.data.shift();
+  });
+  chart.update('none');
+}
+
+// ── Numeric updaters ──────────────────────────────────────────────────────────
+
+function setVal(id, val, decimals = 3) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = typeof val === 'number' ? val.toFixed(decimals) : val;
+}
+
+function colorTemp(el, val) {
+  el.classList.remove('green', 'yellow', 'red');
+  if (val > 30)      el.classList.add('red');
+  else if (val > 27) el.classList.add('yellow');
+  else               el.classList.add('green');
+}
+
+// ── WebSocket ─────────────────────────────────────────────────────────────────
+
+let frameCount = 0;
+let ws;
+
+function connect() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${proto}://${location.host}/ws`);
+
+  ws.onopen = () => {
+    setChip('ws-chip', 'ws-label', 'ok', 'WebSocket ✓');
+  };
+
+  ws.onclose = () => {
+    setChip('ws-chip', 'ws-label', 'error', 'Disconnected');
+    setTimeout(connect, 2000);
+  };
+
+  ws.onerror = () => {
+    setChip('ws-chip', 'ws-label', 'error', 'Error');
+  };
+
+  ws.onmessage = (evt) => {
+    const msg = JSON.parse(evt.data);
+    if (msg.type === 'sensor')  handleSensor(msg.data);
+    if (msg.type === 'alert')   handleAlert(msg.data);
+    if (msg.type === 'ticket')  addTicket(msg.data);
+    if (msg.type === 'boot')    handleBoot(msg.data);
+  };
+}
+
+function setChip(chipId, labelId, cls, text) {
+  const chip = document.getElementById(chipId);
+  chip.className = 'chip ' + cls;
+  document.getElementById(labelId).textContent = text;
+}
+
+// ── Data handlers ─────────────────────────────────────────────────────────────
+
+function handleSensor(d) {
+  frameCount++;
+  document.getElementById('frame-count').textContent = `${frameCount} frames`;
+  setChip('hw-chip', 'hw-label', 'ok', 'Live ✓');
+
+  setVal('v-te', d.te, 2);
+  setVal('v-ti', d.ti, 2);
+  const td = (d.te - d.ti);
+  setVal('v-td', td, 2);
+  colorTemp(document.getElementById('v-te'), d.te);
+
+  setVal('v-ax', d.ax, 4);
+  setVal('v-ay', d.ay, 4);
+  setVal('v-az', d.az, 4);
+  setVal('v-gx', d.gx, 2);
+  setVal('v-gy', d.gy, 2);
+  setVal('v-gz', d.gz, 2);
+
+  pushChart(tempChart,  d.te, d.ti);
+  pushChart(accelChart, d.ax, d.ay, d.az);
+  pushChart(gyroChart,  d.gx, d.gy, d.gz);
+}
+
+function handleAlert(d) {
+  const banner = document.getElementById('alert-banner');
+  document.getElementById('alert-msg').textContent =
+    `Temp ${d.temp}°C exceeded threshold ${d.threshold}°C — ${d.location} — Generating ticket…`;
+  banner.classList.add('show');
+  setTimeout(() => banner.classList.remove('show'), 15000);
+}
+
+function handleBoot(d) {
+  setChip('hw-chip', 'hw-label', d.mcp9808 && d.mpu6050 ? 'ok' : 'warn',
+    `STM32 boot | MCP:${d.mcp9808?'✓':'✗'} MPU:${d.mpu6050?'✓':'✗'}`);
+}
+
+function addTicket(data) {
+  const list = document.getElementById('tickets-list');
+  const div = document.createElement('div');
+  div.className = 'ticket';
+  div.innerHTML = `<div class="ticket-meta">Ticket #${data.id} — ${data.timestamp}</div>${escHtml(data.ticket)}`;
+  list.prepend(div);
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── LLM analysis ──────────────────────────────────────────────────────────────
+
+async function runAnalysis() {
+  const btn = document.getElementById('analyze-btn');
+  const out = document.getElementById('llm-output');
+  const prompt = document.getElementById('llm-prompt').value.trim();
+  const samples = parseInt(document.getElementById('llm-samples').value, 10);
+
+  if (!prompt) { alert('Enter a prompt first.'); return; }
+
+  btn.disabled = true;
+  out.innerHTML = '<span class="llm-thinking">Claude is thinking…</span>';
+
+  try {
+    const resp = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, samples }),
+    });
+
+    if (!resp.ok) { out.textContent = 'Server error: ' + resp.status; return; }
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    out.textContent = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      out.textContent += decoder.decode(value, { stream: true });
+      out.scrollTop = out.scrollHeight;
+    }
+  } catch (e) {
+    out.textContent = 'Error: ' + e.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function clearOutput() {
+  document.getElementById('llm-output').innerHTML =
+    '<span class="llm-thinking">Output will appear here…</span>';
+}
+
+async function simulateAlert() {
+  await fetch('/api/simulate-alert', { method: 'POST' });
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+connect();
+</script>
+</body>
+</html>
