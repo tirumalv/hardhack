@@ -118,22 +118,135 @@
   /* ── Charts ── */
   .chart-wrap { position: relative; height: 180px; }
 
-  /* ── Alert banner ── */
+  /* ── Alert overlay ── */
+  #alert-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(0,0,0,0.75);
+    align-items: center;
+    justify-content: center;
+  }
+  #alert-overlay.show { display: flex; }
+
+  #alert-modal {
+    background: #1a0505;
+    border: 2px solid var(--red);
+    border-radius: 14px;
+    padding: 36px 40px;
+    max-width: 520px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 0 60px rgba(248,81,73,0.5), 0 0 120px rgba(248,81,73,0.2);
+    animation: modal-flash 0.8s infinite alternate;
+    position: relative;
+  }
+  @keyframes modal-flash {
+    from { box-shadow: 0 0 40px rgba(248,81,73,0.4), 0 0 80px rgba(248,81,73,0.15); border-color: #f85149; }
+    to   { box-shadow: 0 0 80px rgba(248,81,73,0.9), 0 0 160px rgba(248,81,73,0.4); border-color: #ff6b63; }
+  }
+
+  .alert-siren {
+    font-size: 3.2rem;
+    animation: siren-spin 0.6s linear infinite;
+    display: inline-block;
+    margin-bottom: 12px;
+  }
+  @keyframes siren-spin {
+    0%   { filter: hue-rotate(0deg) brightness(1); }
+    50%  { filter: hue-rotate(20deg) brightness(1.4); }
+    100% { filter: hue-rotate(0deg) brightness(1); }
+  }
+
+  .alert-title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--red);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    animation: text-flicker 0.8s infinite alternate;
+  }
+  @keyframes text-flicker {
+    from { opacity: 0.85; }
+    to   { opacity: 1.0; text-shadow: 0 0 16px #f85149; }
+  }
+
+  .alert-subtitle {
+    font-size: 0.82rem;
+    color: #e07070;
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+
+  .alert-stats {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+  .alert-stat { text-align: center; }
+  .alert-stat-val {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--red);
+    font-family: 'Courier New', monospace;
+  }
+  .alert-stat-label {
+    font-size: 0.68rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .alert-progress {
+    height: 4px;
+    background: #3d1a1a;
+    border-radius: 2px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .alert-progress-bar {
+    height: 100%;
+    background: var(--red);
+    width: 100%;
+    animation: progress-drain 15s linear forwards;
+  }
+  @keyframes progress-drain {
+    from { width: 100%; }
+    to   { width: 0%; }
+  }
+
+  .alert-dismiss {
+    background: transparent;
+    border: 1px solid var(--red);
+    color: var(--red);
+    padding: 8px 24px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .alert-dismiss:hover { background: #3d1a1a; }
+
+  /* ── Alert banner (inline, below header) ── */
   #alert-banner {
     display: none;
-    padding: 12px 20px;
+    padding: 10px 20px;
     background: #3d1a1a;
     border: 1px solid var(--red);
     border-radius: 8px;
     color: var(--red);
     font-weight: 600;
-    font-size: 0.9rem;
-    animation: pulse 1.5s infinite alternate;
+    font-size: 0.85rem;
+    animation: pulse 1s infinite alternate;
   }
   #alert-banner.show { display: block; }
   @keyframes pulse {
-    from { opacity: 0.8; }
-    to   { opacity: 1.0; }
+    from { opacity: 0.75; background: #3d1a1a; }
+    to   { opacity: 1.0;  background: #5a1a1a; }
   }
 
   /* ── LLM panel ── */
@@ -230,6 +343,27 @@
 </head>
 <body>
 
+<!-- ── Alert overlay ── -->
+<div id="alert-overlay">
+  <div id="alert-modal">
+    <div class="alert-siren">🚨</div>
+    <div class="alert-title">Thermal Alert</div>
+    <div class="alert-subtitle" id="alert-location">Server Rack A</div>
+    <div class="alert-stats">
+      <div class="alert-stat">
+        <div class="alert-stat-val" id="alert-temp-val">—</div>
+        <div class="alert-stat-label">Current °C</div>
+      </div>
+      <div class="alert-stat">
+        <div class="alert-stat-val" id="alert-thresh-val">—</div>
+        <div class="alert-stat-label">Threshold °C</div>
+      </div>
+    </div>
+    <div class="alert-progress"><div class="alert-progress-bar" id="alert-progress-bar"></div></div>
+    <button class="alert-dismiss" onclick="dismissAlert()">Acknowledge</button>
+  </div>
+</div>
+
 <!-- ── Header ── -->
 <header>
   <h1>Thermal Overload <span>Monitor</span></h1>
@@ -237,7 +371,6 @@
     <span class="chip" id="ws-chip"><span class="dot"></span><span id="ws-label">Connecting…</span></span>
     <span class="chip" id="hw-chip"><span class="dot"></span><span id="hw-label">No data</span></span>
     <span id="frame-count" style="font-size:0.72rem;color:var(--muted)">0 frames</span>
-    <button class="btn btn-ghost" style="font-size:0.72rem;padding:4px 10px" onclick="simulateAlert()">🔥 Sim Alert</button>
   </div>
 </header>
 
@@ -334,9 +467,9 @@
 
   <!-- LLM Analysis -->
   <div class="card" id="llm-section">
-    <div class="card-title">Claude AI Analysis</div>
+    <div class="card-title">Gemini AI Analysis</div>
     <div class="llm-controls">
-      <textarea id="llm-prompt" placeholder="Ask Claude anything about the sensor data… e.g. 'Is the device being moved? Detect any vibrations.'"
+      <textarea id="llm-prompt" placeholder="Ask Gemini anything about the sensor data… e.g. 'Is the device being moved? Detect any vibrations.'"
       >Analyze the sensor data. Describe the motion state, temperature trend, and flag any anomalies.</textarea>
       <select id="llm-samples">
         <option value="50">50 samples</option>
@@ -487,11 +620,28 @@ function handleSensor(d) {
 }
 
 function handleAlert(d) {
-  const banner = document.getElementById('alert-banner');
+  // Inline banner
   document.getElementById('alert-msg').textContent =
-    `Temp ${d.temp}°C exceeded threshold ${d.threshold}°C — ${d.location} — Generating ticket…`;
+    `Temp ${d.temp}°C exceeded threshold ${d.threshold}°C — ${d.location}`;
+  const banner = document.getElementById('alert-banner');
   banner.classList.add('show');
   setTimeout(() => banner.classList.remove('show'), 15000);
+
+  // Full overlay
+  document.getElementById('alert-temp-val').textContent  = d.temp ?? '—';
+  document.getElementById('alert-thresh-val').textContent = d.threshold ?? '—';
+  document.getElementById('alert-location').textContent   = d.location ?? '';
+
+  // Reset progress bar animation by re-inserting element
+  const bar = document.getElementById('alert-progress-bar');
+  const newBar = bar.cloneNode(true);
+  bar.parentNode.replaceChild(newBar, bar);
+
+  document.getElementById('alert-overlay').classList.add('show');
+}
+
+function dismissAlert() {
+  document.getElementById('alert-overlay').classList.remove('show');
 }
 
 function handleBoot(d) {
@@ -522,7 +672,7 @@ async function runAnalysis() {
   if (!prompt) { alert('Enter a prompt first.'); return; }
 
   btn.disabled = true;
-  out.innerHTML = '<span class="llm-thinking">Claude is thinking…</span>';
+  out.innerHTML = '<span class="llm-thinking">Gemini is thinking…</span>';
 
   try {
     const resp = await fetch('/api/analyze', {
@@ -555,12 +705,7 @@ function clearOutput() {
     '<span class="llm-thinking">Output will appear here…</span>';
 }
 
-async function simulateAlert() {
-  await fetch('/api/simulate-alert', { method: 'POST' });
-}
-
 // ── Init ──────────────────────────────────────────────────────────────────────
-connect();
-</script>
+connect();</script>
 </body>
 </html>
