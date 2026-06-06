@@ -107,28 +107,6 @@ def serial_reader(port: str, baud: int, stop_event: threading.Event):
             time.sleep(3)
 
 
-def fake_serial_reader(stop_event: threading.Event):
-    """Generates synthetic sensor data (no board needed)."""
-    import math, random
-    t = 0.0
-    while not stop_event.is_set():
-        frame = {
-            "type": "data",
-            "ms": int(t * 1000),
-            "ax": round(math.sin(t * 0.5) * 0.1, 4),
-            "ay": round(math.cos(t * 0.3) * 0.05, 4),
-            "az": round(9.81 + random.uniform(-0.02, 0.02), 4),
-            "gx": round(random.gauss(0, 0.5), 3),
-            "gy": round(random.gauss(0, 0.5), 3),
-            "gz": round(random.gauss(0, 0.3), 3),
-            "ti": round(25.0 + math.sin(t * 0.1) * 2, 2),
-            "te": round(24.0 + math.cos(t * 0.07) * 1.5, 2),
-        }
-        serial_raw_q.put(json.dumps(frame).encode())
-        t += 0.1
-        time.sleep(0.1)
-
-
 # ── Async processor (runs in event loop) ─────────────────────────────────────
 
 async def process_serial_queue():
@@ -252,7 +230,7 @@ async def analyze(request: dict):
 
     if not sensor_buf:
         return StreamingResponse(
-            iter(["No sensor data yet. Make sure the STM32 is connected and streaming."]),
+            iter(["No data available."]),
             media_type="text/plain",
         )
 
@@ -288,16 +266,10 @@ def main():
     parser.add_argument("--port", default="COM3", help="Serial port (e.g. COM3 or /dev/ttyACM0)")
     parser.add_argument("--baud", type=int, default=115200)
     parser.add_argument("--web-port", type=int, default=8000, help="HTTP/WebSocket port")
-    parser.add_argument("--fake", action="store_true", help="Use synthetic data (no board)")
     args = parser.parse_args()
 
-    # Start serial reader thread
-    if args.fake:
-        print("[server] Running in FAKE data mode.")
-        t = threading.Thread(target=fake_serial_reader, args=(stop_event,), daemon=True)
-    else:
-        t = threading.Thread(target=serial_reader,
-                             args=(args.port, args.baud, stop_event), daemon=True)
+    t = threading.Thread(target=serial_reader,
+                         args=(args.port, args.baud, stop_event), daemon=True)
     t.start()
 
     print(f"[server] Dashboard -> http://localhost:{args.web_port}")
