@@ -2,11 +2,11 @@
 server.py — Thermal Overload Ticket Generator: host process
 
 Reads JSON lines from the STM32 over USB serial, serves a real-time web
-dashboard via FastAPI + WebSocket, and calls Claude on thermal alerts or
+dashboard via FastAPI + WebSocket, and calls Gemini on thermal alerts or
 on-demand user analysis.
 
 Usage:
-    set ANTHROPIC_API_KEY=sk-ant-...
+    $env:GEMINI_API_KEY = "AIza..."
     python server.py --port COM3 --baud 115200
 
     # No board? Feed test data via stdin:
@@ -164,7 +164,7 @@ async def process_serial_queue():
                 print(f"[ALERT] {frame}")
                 await ws.broadcast({"type": "alert", "data": frame})
 
-                # Generate ticket in a thread (blocking Claude call)
+                # Generate ticket in a thread (blocking Gemini call)
                 def _gen():
                     try:
                         ticket_text = ai_agent.alert_ticket(frame)
@@ -300,7 +300,7 @@ def main():
                              args=(args.port, args.baud, stop_event), daemon=True)
     t.start()
 
-    print(f"[server] Dashboard → http://localhost:{args.web_port}")
+    print(f"[server] Dashboard -> http://localhost:{args.web_port}")
     uvicorn.run(app, host="0.0.0.0", port=args.web_port, log_level="warning")
 
 
