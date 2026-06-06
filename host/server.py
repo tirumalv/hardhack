@@ -128,10 +128,21 @@ async def process_serial_queue():
             try:
                 frame = json.loads(raw)
             except json.JSONDecodeError:
+                # Plain-text debug lines from firmware ([TEMP], [BOOT], etc.) — log and skip
+                print(f"[serial] {raw.decode(errors='replace').strip()}")
                 continue
 
             frame["_ts"] = datetime.now(timezone.utc).isoformat()
-            ftype = frame.get("type", "data")
+
+            # Real firmware sends {"status":"CRITICAL","temp":...,"location":...}
+            # Feature-pipeline firmware sends {"type":"alert/data/boot",...}
+            # Normalise both into a single ftype:
+            if frame.get("status") == "CRITICAL":
+                ftype = "alert"
+                # Ensure downstream code has a consistent threshold field
+                frame.setdefault("threshold", 30.0)
+            else:
+                ftype = frame.get("type", "data")
 
             if ftype == "data":
                 sensor_buf.append(frame)
