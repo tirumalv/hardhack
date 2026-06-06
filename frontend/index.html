@@ -10,215 +10,129 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg:       #0d1117;
-    --surface:  #161b22;
-    --border:   #30363d;
-    --text:     #c9d1d9;
-    --muted:    #8b949e;
-    --blue:     #58a6ff;
-    --green:    #3fb950;
-    --yellow:   #d29922;
-    --red:      #f85149;
-    --orange:   #e3903a;
+    --bg:      #0d1117;
+    --surface: #161b22;
+    --border:  #30363d;
+    --text:    #c9d1d9;
+    --muted:   #8b949e;
+    --blue:    #58a6ff;
+    --green:   #3fb950;
+    --yellow:  #d29922;
+    --red:     #f85149;
+    --orange:  #e3903a;
   }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    min-height: 100vh;
-  }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
 
-  /* â”€â”€ Header â”€â”€ */
+  /* Header */
   header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 24px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    z-index: 10;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 24px; background: var(--surface);
+    border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10;
   }
   header h1 { font-size: 1.1rem; font-weight: 600; }
   header h1 span { color: var(--red); }
+  .status-row { display: flex; gap: 14px; align-items: center; }
 
-  .status-row { display: flex; gap: 16px; align-items: center; }
   .chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.75rem;
-    padding: 3px 10px;
-    border-radius: 20px;
-    background: #21262d;
-    border: 1px solid var(--border);
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 0.75rem; padding: 3px 10px; border-radius: 20px;
+    background: #21262d; border: 1px solid var(--border);
   }
-  .chip .dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--muted);
-    transition: background 0.3s;
-  }
+  .chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transition: background 0.3s; }
   .chip.ok .dot    { background: var(--green); }
   .chip.warn .dot  { background: var(--yellow); }
   .chip.error .dot { background: var(--red); }
 
-  /* â”€â”€ Layout â”€â”€ */
-  .main-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 16px;
-    padding: 20px 24px;
-    max-width: 1400px;
-    margin: 0 auto;
+  /* Spike key hint */
+  .spike-hint {
+    font-size: 0.72rem; color: var(--muted);
+    background: #21262d; border: 1px solid var(--border);
+    padding: 3px 10px; border-radius: 6px;
+    transition: all 0.2s;
+  }
+  .spike-hint.active {
+    color: var(--orange); border-color: var(--orange);
+    box-shadow: 0 0 8px rgba(227,144,58,0.4);
   }
 
-  /* â”€â”€ Cards â”€â”€ */
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px;
+  /* Grid */
+  .main-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px; padding: 20px 24px; max-width: 1400px; margin: 0 auto;
   }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
   .card.span2 { grid-column: span 2; }
   .card.span3 { grid-column: span 3; }
-
   .card-title {
-    font-size: 0.72rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 14px;
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 14px;
   }
 
-  /* â”€â”€ Big temp display â”€â”€ */
-  .big-temp {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 10px 0;
-  }
+  /* Big temp */
+  .big-temp { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 0; }
   .big-temp-val {
-    font-size: 4.5rem;
-    font-weight: 800;
-    font-family: 'Courier New', monospace;
-    font-variant-numeric: tabular-nums;
-    line-height: 1;
-    color: var(--green);
-    transition: color 0.4s;
+    font-size: 4.5rem; font-weight: 800; font-family: 'Courier New', monospace;
+    line-height: 1; color: var(--green); transition: color 0.4s;
   }
   .big-temp-val.yellow { color: var(--yellow); }
   .big-temp-val.red    { color: var(--red); }
   .big-temp-unit { font-size: 1.1rem; color: var(--muted); margin-top: 4px; }
-
-  /* â”€â”€ Status badge â”€â”€ */
   .status-badge {
-    display: inline-block;
-    padding: 6px 18px;
-    border-radius: 20px;
-    font-size: 0.82rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-top: 12px;
-    background: #1a3a1a;
-    color: var(--green);
-    border: 1px solid var(--green);
+    display: inline-block; padding: 6px 18px; border-radius: 20px;
+    font-size: 0.82rem; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; margin-top: 12px;
+    background: #1a3a1a; color: var(--green); border: 1px solid var(--green);
     transition: all 0.3s;
   }
   .status-badge.warn     { background: #3a2e0a; color: var(--yellow); border-color: var(--yellow); }
-  .status-badge.critical { background: #3a0a0a; color: var(--red);    border-color: var(--red);
+  .status-badge.critical { background: #3a0a0a; color: var(--red); border-color: var(--red);
                            animation: badge-pulse 0.8s infinite alternate; }
-  @keyframes badge-pulse {
-    from { box-shadow: none; }
-    to   { box-shadow: 0 0 12px rgba(248,81,73,0.6); }
-  }
+  @keyframes badge-pulse { from { box-shadow: none; } to { box-shadow: 0 0 12px rgba(248,81,73,0.6); } }
 
-  /* â”€â”€ Stat grid â”€â”€ */
-  .stat-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
+  /* Stats */
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .stat-item { text-align: center; padding: 10px 0; }
   .stat-label { font-size: 0.68rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
-  .stat-val {
-    font-size: 1.6rem;
-    font-weight: 700;
-    font-family: 'Courier New', monospace;
-    color: var(--blue);
-  }
+  .stat-val { font-size: 1.6rem; font-weight: 700; font-family: 'Courier New', monospace; color: var(--blue); }
   .stat-unit { font-size: 0.65rem; color: var(--muted); }
 
-  /* â”€â”€ Threshold card â”€â”€ */
+  /* Thresholds */
   .threshold-list { display: flex; flex-direction: column; gap: 10px; }
   .threshold-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 12px;
-    border-radius: 6px;
-    background: #0d1117;
-    font-size: 0.82rem;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px; border-radius: 6px; background: #0d1117; font-size: 0.82rem;
   }
-  .threshold-dot {
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    margin-right: 8px;
-    flex-shrink: 0;
-  }
+  .threshold-dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; flex-shrink: 0; }
   .threshold-label { display: flex; align-items: center; color: var(--text); }
   .threshold-val { font-family: 'Courier New', monospace; font-weight: 600; }
 
-  /* â”€â”€ Chart â”€â”€ */
+  /* Chart */
   .chart-wrap { position: relative; height: 220px; }
 
-  /* â”€â”€ Alert overlay â”€â”€ */
+  /* Alert overlay */
   #alert-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    background: rgba(0,0,0,0.75);
-    align-items: center;
-    justify-content: center;
+    display: none; position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.75); align-items: center; justify-content: center;
   }
   #alert-overlay.show { display: flex; }
-
   #alert-modal {
-    background: #1a0505;
-    border: 2px solid var(--red);
-    border-radius: 14px;
-    padding: 36px 40px;
-    max-width: 520px;
-    width: 90%;
-    text-align: center;
-    box-shadow: 0 0 60px rgba(248,81,73,0.5), 0 0 120px rgba(248,81,73,0.2);
+    background: #1a0505; border: 2px solid var(--red); border-radius: 14px;
+    padding: 36px 40px; max-width: 520px; width: 90%; text-align: center;
     animation: modal-flash 0.8s infinite alternate;
   }
   @keyframes modal-flash {
     from { box-shadow: 0 0 40px rgba(248,81,73,0.4); border-color: #f85149; }
     to   { box-shadow: 0 0 80px rgba(248,81,73,0.9); border-color: #ff6b63; }
   }
-  .alert-siren { font-size: 3.2rem; animation: siren-spin 0.6s linear infinite; display: inline-block; margin-bottom: 12px; }
-  @keyframes siren-spin {
-    0%   { filter: brightness(1); }
-    50%  { filter: brightness(1.5); }
-    100% { filter: brightness(1); }
-  }
+  .alert-siren { font-size: 3.2rem; animation: siren-flash 0.6s linear infinite; display: inline-block; margin-bottom: 12px; }
+  @keyframes siren-flash { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
   .alert-title {
     font-size: 1.6rem; font-weight: 800; color: var(--red);
     letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 6px;
     animation: text-flicker 0.8s infinite alternate;
   }
-  @keyframes text-flicker {
-    from { opacity: 0.85; }
-    to   { opacity: 1.0; text-shadow: 0 0 16px #f85149; }
-  }
+  @keyframes text-flicker { from { opacity: 0.85; } to { opacity: 1.0; text-shadow: 0 0 16px #f85149; } }
   .alert-subtitle { font-size: 0.82rem; color: #e07070; margin-bottom: 20px; line-height: 1.6; }
   .alert-stats { display: flex; justify-content: center; gap: 24px; margin-bottom: 24px; }
   .alert-stat { text-align: center; }
@@ -234,20 +148,17 @@
   }
   .alert-dismiss:hover { background: #3d1a1a; }
 
-  /* â”€â”€ Alert banner â”€â”€ */
+  /* Alert banner */
   #alert-banner {
-    display: none; padding: 10px 20px;
-    background: #3d1a1a; border: 1px solid var(--red);
-    border-radius: 8px; color: var(--red); font-weight: 600; font-size: 0.85rem;
+    display: none; padding: 10px 20px; background: #3d1a1a;
+    border: 1px solid var(--red); border-radius: 8px;
+    color: var(--red); font-weight: 600; font-size: 0.85rem;
     animation: pulse 1s infinite alternate;
   }
   #alert-banner.show { display: block; }
-  @keyframes pulse {
-    from { opacity: 0.75; background: #3d1a1a; }
-    to   { opacity: 1.0;  background: #5a1a1a; }
-  }
+  @keyframes pulse { from { opacity: 0.75; background: #3d1a1a; } to { opacity: 1.0; background: #5a1a1a; } }
 
-  /* â”€â”€ LLM panel â”€â”€ */
+  /* LLM */
   .llm-controls { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
   .llm-controls textarea {
     flex: 1; min-width: 280px; padding: 8px 12px;
@@ -273,7 +184,7 @@
   }
   .llm-thinking { color: var(--muted); font-style: italic; }
 
-  /* â”€â”€ Tickets â”€â”€ */
+  /* Tickets */
   .ticket {
     background: #0d1117; border: 1px solid #3d2a1a;
     border-left: 4px solid var(--orange); border-radius: 6px;
@@ -282,27 +193,24 @@
     line-height: 1.5; color: var(--text);
   }
   .ticket-meta { font-size: 0.7rem; color: var(--muted); margin-bottom: 6px; }
-  #tickets-list:empty::after {
-    content: 'No thermal alerts triggered yet.';
-    color: var(--muted); font-size: 0.82rem;
-  }
+  #tickets-list:empty::after { content: 'No thermal alerts triggered yet.'; color: var(--muted); font-size: 0.82rem; }
 </style>
 </head>
 <body>
 
-<!-- â”€â”€ Alert overlay â”€â”€ -->
+<!-- Alert overlay -->
 <div id="alert-overlay">
   <div id="alert-modal">
-    <div class="alert-siren">ðŸš¨</div>
-    <div class="alert-title">Thermal Alert</div>
+    <div class="alert-siren">&#128680;</div>
+    <div class="alert-title">THERMAL ALERT</div>
     <div class="alert-subtitle" id="alert-location">Server Rack A</div>
     <div class="alert-stats">
       <div class="alert-stat">
-        <div class="alert-stat-val" id="alert-temp-val">â€”</div>
+        <div class="alert-stat-val" id="alert-temp-val">--</div>
         <div class="alert-stat-label">Current &deg;C</div>
       </div>
       <div class="alert-stat">
-        <div class="alert-stat-val" id="alert-thresh-val">â€”</div>
+        <div class="alert-stat-val" id="alert-thresh-val">--</div>
         <div class="alert-stat-label">Threshold &deg;C</div>
       </div>
     </div>
@@ -311,13 +219,14 @@
   </div>
 </div>
 
-<!-- â”€â”€ Header â”€â”€ -->
+<!-- Header -->
 <header>
   <h1>Data Centre <span>Thermal Monitor</span></h1>
   <div class="status-row">
-    <span class="chip" id="ws-chip"><span class="dot"></span><span id="ws-label">Connectingâ€¦</span></span>
+    <span class="chip" id="ws-chip"><span class="dot"></span><span id="ws-label">Connecting...</span></span>
     <span class="chip" id="hw-chip"><span class="dot"></span><span id="hw-label">No data</span></span>
     <span id="frame-count" style="font-size:0.72rem;color:var(--muted)">0 readings</span>
+    <span class="spike-hint" id="spike-hint">Press <strong>S</strong> to simulate heat spike</span>
   </div>
 </header>
 
@@ -325,36 +234,36 @@
 
   <!-- Alert banner -->
   <div class="card span3" id="alert-banner">
-    âš  THERMAL ALERT â€” <span id="alert-msg"></span>
+    &#9888; THERMAL ALERT &mdash; <span id="alert-msg"></span>
   </div>
 
   <!-- Current Temperature -->
   <div class="card">
     <div class="card-title">Current Temperature</div>
     <div class="big-temp">
-      <div class="big-temp-val" id="v-te">â€”</div>
+      <div class="big-temp-val" id="v-te">--</div>
       <div class="big-temp-unit">&deg;C</div>
       <div class="status-badge" id="temp-status-badge">No Data</div>
     </div>
   </div>
 
-  <!-- Stats -->
+  <!-- Session Stats -->
   <div class="card">
     <div class="card-title">Session Statistics</div>
     <div class="stat-grid">
       <div class="stat-item">
         <div class="stat-label">Min</div>
-        <div class="stat-val" id="v-min">â€”</div>
+        <div class="stat-val" id="v-min">--</div>
         <div class="stat-unit">&deg;C</div>
       </div>
       <div class="stat-item">
         <div class="stat-label">Max</div>
-        <div class="stat-val" id="v-max" style="color:var(--orange)">â€”</div>
+        <div class="stat-val" id="v-max" style="color:var(--orange)">--</div>
         <div class="stat-unit">&deg;C</div>
       </div>
       <div class="stat-item">
         <div class="stat-label">Average</div>
-        <div class="stat-val" id="v-avg">â€”</div>
+        <div class="stat-val" id="v-avg">--</div>
         <div class="stat-unit">&deg;C</div>
       </div>
       <div class="stat-item">
@@ -365,9 +274,9 @@
     </div>
   </div>
 
-  <!-- Thresholds reference -->
+  <!-- ASHRAE Thresholds -->
   <div class="card">
-    <div class="card-title">ASHRAE Thresholds</div>
+    <div class="card-title">ASHRAE A2 Thresholds</div>
     <div class="threshold-list">
       <div class="threshold-row">
         <div class="threshold-label"><div class="threshold-dot" style="background:var(--green)"></div>Normal</div>
@@ -375,22 +284,22 @@
       </div>
       <div class="threshold-row">
         <div class="threshold-label"><div class="threshold-dot" style="background:var(--yellow)"></div>Warning</div>
-        <div class="threshold-val" style="color:var(--yellow)">27 â€“ 35 &deg;C</div>
+        <div class="threshold-val" style="color:var(--yellow)">27 &ndash; 35 &deg;C</div>
       </div>
       <div class="threshold-row">
         <div class="threshold-label"><div class="threshold-dot" style="background:var(--red)"></div>Critical</div>
         <div class="threshold-val" style="color:var(--red)">&gt; 35 &deg;C</div>
       </div>
       <div class="threshold-row">
-        <div class="threshold-label"><div class="threshold-dot" style="background:#888"></div>Alert fires at</div>
+        <div class="threshold-label"><div class="threshold-dot" style="background:#555"></div>Alert fires at</div>
         <div class="threshold-val">35.0 &deg;C</div>
       </div>
     </div>
   </div>
 
-  <!-- Temperature chart (full width) -->
+  <!-- Temperature Chart -->
   <div class="card span3">
-    <div class="card-title">Temperature over time â€” Server Rack A</div>
+    <div class="card-title">Temperature over time &mdash; Server Rack A</div>
     <div class="chart-wrap"><canvas id="chart-temp"></canvas></div>
   </div>
 
@@ -398,8 +307,7 @@
   <div class="card span3">
     <div class="card-title">Gemini AI Analysis</div>
     <div class="llm-controls">
-      <textarea id="llm-prompt" placeholder="Ask Gemini about the temperature dataâ€¦"
-      >Analyze the temperature trend. Is the data centre within safe operating range? Identify any anomalies or concerning patterns and recommend actions.</textarea>
+      <textarea id="llm-prompt">Analyze the temperature trend. Is the data centre within safe operating range? Identify any anomalies or concerning patterns and recommend actions.</textarea>
       <select id="llm-samples">
         <option value="50">50 samples</option>
         <option value="100" selected>100 samples</option>
@@ -409,45 +317,36 @@
       <button class="btn btn-primary" id="analyze-btn" onclick="runAnalysis()">Analyze</button>
       <button class="btn btn-ghost" onclick="clearOutput()">Clear</button>
     </div>
-    <div id="llm-output"><span class="llm-thinking">Output will appear hereâ€¦</span></div>
+    <div id="llm-output"><span class="llm-thinking">Output will appear here...</span></div>
   </div>
 
-  <!-- Incident tickets -->
+  <!-- Incident Tickets -->
   <div class="card span3">
-    <div class="card-title">Incident Tickets â€” Auto-Generated on Thermal Alert</div>
+    <div class="card-title">Incident Tickets &mdash; Auto-Generated on Thermal Alert</div>
     <div id="tickets-list"></div>
   </div>
 
 </div>
 
 <script>
-// â”€â”€ Chart setup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
 const WINDOW    = 180;
 const THRESHOLD = 35.0;
 const WARN_TEMP = 27.0;
 
+// Chart
 const tempChart = new Chart(document.getElementById('chart-temp').getContext('2d'), {
   type: 'line',
   data: {
     labels: Array(WINDOW).fill(''),
-    datasets: [
-      { label: 'Inlet Temp &deg;C', borderColor: '#58a6ff', backgroundColor: 'rgba(88,166,255,0.08)',
-        data: [], fill: true },
-    ]
+    datasets: [{ label: 'Inlet Temp \u00b0C', borderColor: '#58a6ff', backgroundColor: 'rgba(88,166,255,0.08)', data: [], fill: true }]
   },
   options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    animation: false,
+    responsive: true, maintainAspectRatio: false, animation: false,
     elements: { point: { radius: 0 }, line: { borderWidth: 2 } },
     scales: {
       x: { display: false },
-      y: {
-        min: 15, max: 45,
-        grid: { color: '#21262d' },
-        ticks: { color: '#8b949e', font: { size: 10 }, callback: v => v + '&deg;C' }
-      }
+      y: { min: 15, max: 45, grid: { color: '#21262d' },
+           ticks: { color: '#8b949e', font: { size: 10 }, callback: v => v + '\u00b0C' } }
     },
     plugins: {
       legend: { labels: { color: '#8b949e', font: { size: 10 }, boxWidth: 12 } },
@@ -455,14 +354,14 @@ const tempChart = new Chart(document.getElementById('chart-temp').getContext('2d
         annotations: {
           warnLine: {
             type: 'line', yMin: WARN_TEMP, yMax: WARN_TEMP,
-            borderColor: '#d29922', borderWidth: 1, borderDash: [6, 4],
-            label: { content: 'Warning 27&deg;C', display: true, position: 'end',
+            borderColor: '#d29922', borderWidth: 1, borderDash: [6,4],
+            label: { content: 'Warning 27\u00b0C', display: true, position: 'end',
                      color: '#d29922', font: { size: 9 }, backgroundColor: 'transparent' }
           },
           critLine: {
             type: 'line', yMin: THRESHOLD, yMax: THRESHOLD,
-            borderColor: '#f85149', borderWidth: 1.5, borderDash: [6, 4],
-            label: { content: 'Critical 35&deg;C', display: true, position: 'end',
+            borderColor: '#f85149', borderWidth: 1.5, borderDash: [6,4],
+            label: { content: 'Critical 35\u00b0C', display: true, position: 'end',
                      color: '#f85149', font: { size: 9 }, backgroundColor: 'transparent' }
           }
         }
@@ -471,10 +370,8 @@ const tempChart = new Chart(document.getElementById('chart-temp').getContext('2d
   }
 });
 
-// â”€â”€ Session stats â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
+// Stats
 let tempMin = Infinity, tempMax = -Infinity, tempSum = 0, tempCount = 0, alertCount = 0;
-
 function updateStats(t) {
   if (t < tempMin) { tempMin = t; document.getElementById('v-min').textContent = t.toFixed(1); }
   if (t > tempMax) { tempMax = t; document.getElementById('v-max').textContent = t.toFixed(1); }
@@ -482,15 +379,12 @@ function updateStats(t) {
   document.getElementById('v-avg').textContent = (tempSum / tempCount).toFixed(1);
 }
 
-// â”€â”€ WebSocket â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-let frameCount = 0;
-let ws;
-
+// WebSocket
+let frameCount = 0, ws;
 function connect() {
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
   ws = new WebSocket(`${proto}://${location.host}/ws`);
-  ws.onopen  = () => setChip('ws-chip', 'ws-label', 'ok', 'WebSocket âœ“');
+  ws.onopen  = () => setChip('ws-chip', 'ws-label', 'ok', 'WebSocket OK');
   ws.onclose = () => { setChip('ws-chip', 'ws-label', 'error', 'Disconnected'); setTimeout(connect, 2000); };
   ws.onerror = () => setChip('ws-chip', 'ws-label', 'error', 'Error');
   ws.onmessage = (evt) => {
@@ -501,92 +395,69 @@ function connect() {
     if (msg.type === 'boot')   handleBoot(msg.data);
   };
 }
-
 function setChip(chipId, labelId, cls, text) {
   document.getElementById(chipId).className = 'chip ' + cls;
   document.getElementById(labelId).textContent = text;
 }
 
-// â”€â”€ Data handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
+// Sensor handler
 function handleSensor(d) {
-  const t = d.te ?? d.temp;
+  const t = d.te != null ? d.te : d.temp;
   if (t == null) return;
-
   frameCount++;
-  document.getElementById('frame-count').textContent = `${frameCount} readings`;
-  setChip('hw-chip', 'hw-label', 'ok', 'Live âœ“');
+  document.getElementById('frame-count').textContent = frameCount + ' readings';
+  setChip('hw-chip', 'hw-label', 'ok', 'Live');
 
-  // Big display
   const el = document.getElementById('v-te');
   el.textContent = t.toFixed(1);
   el.className = 'big-temp-val' + (t > THRESHOLD ? ' red' : t > WARN_TEMP ? ' yellow' : '');
 
-  // Status badge
   const badge = document.getElementById('temp-status-badge');
-  if (t > THRESHOLD) {
-    badge.className = 'status-badge critical';
-    badge.textContent = 'CRITICAL';
-  } else if (t > WARN_TEMP) {
-    badge.className = 'status-badge warn';
-    badge.textContent = 'WARNING';
-  } else {
-    badge.className = 'status-badge';
-    badge.textContent = 'NORMAL';
-  }
+  if (t > THRESHOLD) { badge.className = 'status-badge critical'; badge.textContent = 'CRITICAL'; }
+  else if (t > WARN_TEMP) { badge.className = 'status-badge warn'; badge.textContent = 'WARNING'; }
+  else { badge.className = 'status-badge'; badge.textContent = 'NORMAL'; }
 
   updateStats(t);
-
-  // Chart
   tempChart.data.datasets[0].data.push(t);
-  if (tempChart.data.datasets[0].data.length > WINDOW)
-    tempChart.data.datasets[0].data.shift();
+  if (tempChart.data.datasets[0].data.length > WINDOW) tempChart.data.datasets[0].data.shift();
   tempChart.update('none');
 }
 
 function handleAlert(d) {
   alertCount++;
   document.getElementById('v-alerts').textContent = alertCount;
-
   document.getElementById('alert-msg').textContent =
-    `Temp ${d.temp}&deg;C exceeded threshold ${d.threshold ?? THRESHOLD}&deg;C â€” ${d.location}`;
+    'Temp ' + d.temp + '\u00b0C exceeded ' + (d.threshold || THRESHOLD) + '\u00b0C \u2014 ' + d.location;
   const banner = document.getElementById('alert-banner');
   banner.classList.add('show');
   setTimeout(() => banner.classList.remove('show'), 15000);
 
-  document.getElementById('alert-temp-val').textContent  = d.temp ?? 'â€”';
-  document.getElementById('alert-thresh-val').textContent = d.threshold ?? THRESHOLD;
-  document.getElementById('alert-location').textContent   = d.location ?? '';
-
+  document.getElementById('alert-temp-val').textContent  = d.temp || '--';
+  document.getElementById('alert-thresh-val').textContent = d.threshold || THRESHOLD;
+  document.getElementById('alert-location').textContent   = d.location || '';
   const bar = document.getElementById('alert-progress-bar');
   const newBar = bar.cloneNode(true);
   bar.parentNode.replaceChild(newBar, bar);
   document.getElementById('alert-overlay').classList.add('show');
 }
 
-function dismissAlert() {
-  document.getElementById('alert-overlay').classList.remove('show');
-}
+function dismissAlert() { document.getElementById('alert-overlay').classList.remove('show'); }
 
 function handleBoot(d) {
   setChip('hw-chip', 'hw-label', d.mcp9808 ? 'ok' : 'warn',
-    `STM32 boot | MCP:${d.mcp9808 ? 'âœ“' : 'âœ—'}`);
+    'STM32 | MCP:' + (d.mcp9808 ? 'OK' : 'FAIL'));
 }
 
 function addTicket(data) {
   const list = document.getElementById('tickets-list');
   const div = document.createElement('div');
   div.className = 'ticket';
-  div.innerHTML = `<div class="ticket-meta">Ticket #${data.id} â€” ${data.timestamp}</div>${escHtml(data.ticket)}`;
+  div.innerHTML = '<div class="ticket-meta">Ticket #' + data.id + ' &mdash; ' + data.timestamp + '</div>' +
+    data.ticket.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   list.prepend(div);
 }
 
-function escHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-// â”€â”€ Gemini analysis â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
+// Gemini analysis
 async function runAnalysis() {
   const btn = document.getElementById('analyze-btn');
   const out = document.getElementById('llm-output');
@@ -594,11 +465,10 @@ async function runAnalysis() {
   const samples = parseInt(document.getElementById('llm-samples').value, 10);
   if (!prompt) { alert('Enter a prompt first.'); return; }
   btn.disabled = true;
-  out.innerHTML = '<span class="llm-thinking">Gemini is thinkingâ€¦</span>';
+  out.innerHTML = '<span class="llm-thinking">Gemini is thinking...</span>';
   try {
     const resp = await fetch('/api/analyze', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt, samples }),
     });
     if (!resp.ok) { out.textContent = 'Server error: ' + resp.status; return; }
@@ -611,18 +481,33 @@ async function runAnalysis() {
       out.textContent += decoder.decode(value, { stream: true });
       out.scrollTop = out.scrollHeight;
     }
-  } catch (e) {
-    out.textContent = 'Error: ' + e.message;
-  } finally {
-    btn.disabled = false;
-  }
+  } catch (e) { out.textContent = 'Error: ' + e.message; }
+  finally { btn.disabled = false; }
 }
 
 function clearOutput() {
-  document.getElementById('llm-output').innerHTML = '<span class="llm-thinking">Output will appear hereâ€¦</span>';
+  document.getElementById('llm-output').innerHTML = '<span class="llm-thinking">Output will appear here...</span>';
 }
 
-// â”€â”€ Init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Keyboard spike toggle (press S)
+let spikeOn = false;
+document.addEventListener('keydown', async (e) => {
+  if (e.key !== 's' && e.key !== 'S') return;
+  spikeOn = !spikeOn;
+  const hint = document.getElementById('spike-hint');
+  try {
+    await fetch('/api/spike', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ active: spikeOn }) });
+    if (spikeOn) {
+      hint.classList.add('active');
+      hint.innerHTML = 'Press <strong>S</strong> &mdash; <span style="color:var(--orange)">HEAT SPIKE ON</span>';
+    } else {
+      hint.classList.remove('active');
+      hint.innerHTML = 'Press <strong>S</strong> to simulate heat spike';
+    }
+  } catch(e) { console.error(e); }
+});
+
 connect();
 </script>
 </body>

@@ -47,7 +47,8 @@ sensor_buf: deque = deque(maxlen=BUFFER_SIZE)
 latest_frame: dict | None = None
 tickets: list[dict] = []
 serial_raw_q: queue.Queue = queue.Queue(maxsize=500)
-last_alert_time: float = 0.0    # epoch seconds of last ticket generation
+last_alert_time: float = 0.0
+spike_active: bool = False      # keyboard-triggered heat spike
 
 
 # ── WebSocket manager ─────────────────────────────────────────────────────────
@@ -282,6 +283,14 @@ async def analyze(request: dict):
     return StreamingResponse(gen, media_type="text/plain")
 
 
+@app.post("/api/spike")
+async def toggle_spike(request: dict):
+    """Toggle keyboard heat spike for demo mode."""
+    global spike_active
+    spike_active = bool(request.get("active", False))
+    return {"spike": spike_active}
+
+
 @app.post("/api/simulate-alert")
 async def simulate_alert():
     """Inject a test alert (demo mode only)."""
@@ -300,39 +309,31 @@ async def simulate_alert():
 def demo_reader(stop_event: threading.Event):
     """
     Simulates a data-centre inlet temperature sensor.
-    Starts at 28 °C (slightly warm), slowly drifts upward with realistic noise,
-    occasional workload spikes that push into warning/critical range.
+    Starts at 28 deg C (slightly warm), slowly drifts upward with realistic noise.
+    Press S in browser to toggle a heat spike (+6-7 deg, simulates sensor near heat source).
     """
     import math, random
+    global spike_active
     t = 0.0
-    # Slow upward trend: starts at 28, climbs ~0.3 °C/min, plateaus around 32-33
-    trend = 28.0
-    spike_active = 0       # seconds remaining in current spike
-    spike_peak   = 0.0
+    trend = 28.0   # starting temperature
 
     while not stop_event.is_set():
-        # Slow upward trend — rises ~0.005 °C/s, soft-caps around 32 °C
+        # Slow upward trend -- rises ~0.005 deg/s, soft-caps around 32 deg
         trend += 0.005 * (1.0 - max(0, trend - 28.0) / 6.0)
 
-        # Small sine wave to look "real-time" (HVAC cycling effect)
+        # Small sine wave (HVAC cycling effect)
         wave = math.sin(t * 0.08) * 0.4 + math.sin(t * 0.21) * 0.15
 
         # Random micro-noise
         noise = random.uniform(-0.12, 0.12)
 
-        # Occasional workload spike: every 90-150 s, temp rises 3-7 °C over ~45 s
-        if spike_active <= 0 and random.random() < 0.007:   # ~0.7% chance per second
-            spike_active = random.randint(35, 55)
-            spike_peak   = random.uniform(3.5, 7.5)
+        # Keyboard spike (S key): simulate sensor near heat source -- instant +6-7 deg
+        if spike_active:
+            extra = 6.5 + math.sin(t * 0.3) * 0.8
+        else:
+            extra = 0.0
 
-        spike_val = 0.0
-        if spike_active > 0:
-            progress = 1.0 - (spike_active / 45.0)
-            spike_val = spike_peak * math.sin(max(0, progress) * math.pi)
-            spike_active -= 1
-
-        temp = round(trend + wave + noise + spike_val, 2)
-        # Clamp to realistic range
+        temp = round(trend + wave + noise + extra, 2)
         temp = max(26.0, min(42.0, temp))
 
         frame = {
