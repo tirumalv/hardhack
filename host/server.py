@@ -35,16 +35,19 @@ import agent as ai_agent
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-BUFFER_SIZE = 1000   # rolling sensor frame count
-FRONTEND_PATH = os.path.join(os.path.dirname(__file__), "..", "frontend", "index.html")
+BUFFER_SIZE     = 1000    # rolling sensor frame count
+ALERT_THRESHOLD = 35.0    # °C — ASHRAE A2 critical limit
+ALERT_COOLDOWN  = 60      # seconds between auto-generated tickets (avoid spam)
+FRONTEND_PATH   = os.path.join(os.path.dirname(__file__), "..", "frontend", "index.html")
 
 
 # ── Shared state ──────────────────────────────────────────────────────────────
 
 sensor_buf: deque = deque(maxlen=BUFFER_SIZE)
 latest_frame: dict | None = None
-tickets: list[dict] = []          # generated incident tickets
-serial_raw_q: queue.Queue = queue.Queue(maxsize=500)   # thread → async bridge
+tickets: list[dict] = []
+serial_raw_q: queue.Queue = queue.Queue(maxsize=500)
+last_alert_time: float = 0.0    # epoch seconds of last ticket generation
 
 
 # ── WebSocket manager ─────────────────────────────────────────────────────────
@@ -111,7 +114,7 @@ def serial_reader(port: str, baud: int, stop_event: threading.Event):
 
 async def process_serial_queue():
     """Drains serial_raw_q, updates state, broadcasts to WebSocket clients."""
-    global latest_frame
+    global latest_frame, last_alert_time
 
     loop = asyncio.get_event_loop()
 
@@ -139,8 +142,7 @@ async def process_serial_queue():
             # Normalise both into a single ftype:
             if frame.get("status") == "CRITICAL":
                 ftype = "alert"
-                # Ensure downstream code has a consistent threshold field
-                frame.setdefault("threshold", 30.0)
+                frame.setdefault("threshold", 35.0)
             else:
                 ftype = frame.get("type", "data")
 
@@ -149,30 +151,55 @@ async def process_serial_queue():
                 latest_frame = frame
                 await ws.broadcast({"type": "sensor", "data": frame})
 
+                # Server-side threshold check — catches demo mode and any firmware
+                # that streams data frames without a separate alert message
+                te = frame.get("te") or frame.get("temp")
+                if te is not None and te > ALERT_THRESHOLD:
+                    alert_frame = {
+                        "status": "CRITICAL",
+                        "temp": te,
+                        "threshold": ALERT_THRESHOLD,
+                        "location": frame.get("location", "Server Rack A"),
+                        "_ts": frame["_ts"],
+                    }
+                    ftype = "alert"
+                    frame = alert_frame
+
             elif ftype == "alert":
                 print(f"[ALERT] {frame}")
                 await ws.broadcast({"type": "alert", "data": frame})
 
-                # Generate ticket in a thread (blocking Gemini call)
-                def _gen():
-                    try:
-                        ticket_text = ai_agent.alert_ticket(frame)
-                        ticket = {
-                            "id": len(tickets) + 1,
-                            "timestamp": frame["_ts"],
-                            "payload": frame,
-                            "ticket": ticket_text,
-                        }
-                        tickets.append(ticket)
-                        # schedule broadcast back in the event loop
-                        asyncio.run_coroutine_threadsafe(
-                            ws.broadcast({"type": "ticket", "data": ticket}),
-                            loop,
-                        )
-                    except Exception as e:
-                        print(f"[agent] ticket error: {e}")
+                # Rate-limit ticket generation to avoid spam during sustained overtemp
+                now = time.time()
+                if now - last_alert_time >= ALERT_COOLDOWN:
+                    last_alert_time = now
+                    # Capture frame for closure
+                    _frame = dict(frame)
+                    _frame["recent_temps"] = [
+                        s.get("te") for s in list(sensor_buf)[-10:] if "te" in s
+                    ]
 
-                threading.Thread(target=_gen, daemon=True).start()
+                    def _gen(_f=_frame):
+                        try:
+                            ticket_text = ai_agent.alert_ticket(_f)
+                            ticket = {
+                                "id": len(tickets) + 1,
+                                "timestamp": _f["_ts"],
+                                "payload": _f,
+                                "ticket": ticket_text,
+                            }
+                            tickets.append(ticket)
+                            asyncio.run_coroutine_threadsafe(
+                                ws.broadcast({"type": "ticket", "data": ticket}),
+                                loop,
+                            )
+                        except Exception as e:
+                            print(f"[agent] ticket error: {e}")
+
+                    threading.Thread(target=_gen, daemon=True).start()
+                else:
+                    remaining = int(ALERT_COOLDOWN - (now - last_alert_time))
+                    print(f"[ALERT] Ticket suppressed (cooldown: {remaining}s remaining)")
 
             elif ftype == "boot":
                 await ws.broadcast({"type": "boot", "data": frame})

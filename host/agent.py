@@ -35,25 +35,61 @@ def _model(system: str) -> genai.GenerativeModel:
 def alert_ticket(payload: dict) -> str:
     """
     Synchronous: takes a CRITICAL alert payload, returns a formatted incident ticket.
-    Called from the serial-reader thread when the MCP9808 Alert fires.
+    Called from the serial-reader thread when temperature exceeds threshold.
     """
+    temp     = payload.get("temp", "?")
+    threshold = payload.get("threshold", 35.0)
+    location  = payload.get("location", "Unknown")
+    recent    = payload.get("recent_temps", [])
+
+    # Classify severity by how far above threshold
+    try:
+        excess = float(temp) - float(threshold)
+        if excess >= 5:
+            severity = "CRITICAL"
+        elif excess >= 2:
+            severity = "HIGH"
+        else:
+            severity = "MEDIUM"
+    except (TypeError, ValueError):
+        severity = "HIGH"
+
     system = (
-        "You are an automated IT incident management system. "
-        "When you receive a thermal alert from hardware sensors, generate a "
-        "structured IT incident ticket. Format:\n\n"
+        "You are an automated data-centre incident management system.\n"
+        "Generate a structured IT incident ticket for a thermal overtemperature event.\n\n"
+        "The ticket MUST include the following sections in order:\n\n"
         "TICKET #<auto-id>\n"
         "Severity: <CRITICAL | HIGH | MEDIUM>\n"
         "Title: <one-line summary>\n"
-        "Affected Asset: <location from payload>\n"
-        "Current Temp: <value> °C  |  Threshold: <value> °C\n"
-        "Timestamp: <ISO-8601>\n"
-        "Description: <2-3 sentence description>\n"
-        "Recommended Action: <concise remediation steps>\n"
+        "Affected Asset: <location>\n"
+        "Current Temp: <value> °C  |  Threshold: <value> °C  |  Excess: <delta> °C\n"
+        "Timestamp: <ISO-8601>\n\n"
+        "Description:\n"
+        "<2-3 sentences describing the thermal event and potential impact on hardware>\n\n"
+        "Immediate Actions (execute in order):\n"
+        "1. <first action>\n"
+        "2. <second action>\n"
+        "...\n\n"
+        "Compute Workload Actions:\n"
+        "- List specific steps to reduce compute load and manage temperature:\n"
+        "  • Which workloads to throttle or migrate\n"
+        "  • CPU/GPU power capping instructions\n"
+        "  • VM/container migration recommendations\n"
+        "  • Which non-critical services to suspend\n\n"
+        "Cooling Actions:\n"
+        "- Steps to improve airflow and cooling in the affected rack\n\n"
+        "Escalation: <who to notify and when>\n"
+        "Resolution Criteria: <what temperature/condition marks this ticket resolved>\n"
     )
 
     user_msg = (
-        f"Hardware alert received:\n{json.dumps(payload, indent=2)}\n\n"
-        "Generate the incident ticket."
+        f"Thermal alert received:\n"
+        f"  Location : {location}\n"
+        f"  Temperature: {temp} °C\n"
+        f"  Threshold  : {threshold} °C\n"
+        f"  Severity   : {severity}\n"
+        f"  Recent temps (last 10 readings): {recent}\n\n"
+        "Generate the incident ticket with full compute workload reduction steps."
     )
 
     model = _model(system)
